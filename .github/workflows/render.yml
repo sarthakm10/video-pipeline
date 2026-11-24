@@ -105,3 +105,34 @@ jobs:
           GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
           FILE: ${{ steps.out.outputs.file }}
         run: gh release upload videos "out/$env:FILE" --repo sarthakm10/java_60_days --clobber
+
+  update-app:
+    # After the uploads, regenerate videos.js in java_60_days so the app lists the new videos
+    needs: render
+    if: ${{ !cancelled() && inputs.upload }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: sarthakm10/java_60_days
+          token: ${{ secrets.RELEASE_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Regenerate videos.js
+        run: node scripts/build-videos.js
+
+      - name: Commit and push if it changed
+        run: |
+          if git diff --quiet -- videos.js; then echo "videos.js unchanged"; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add videos.js
+          git commit -m "Update videos.js from video-pipeline run ${{ github.run_id }}"
+          for i in 1 2 3; do
+            git pull --rebase && git push && exit 0
+            sleep 5
+          done
+          exit 1
