@@ -1,0 +1,64 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1920px;height:1080px;overflow:hidden}
+body{background:#fbfaf6;color:#1f2937;font-family:"Segoe UI",sans-serif;position:relative;
+  background-image:radial-gradient(#e7e3d8 1.4px,transparent 1.4px);background-size:34px 34px}
+.slide{position:absolute;inset:70px 110px 110px 110px;display:flex;flex-direction:column}
+h1{font-family:"Ink Free","Segoe Print","Caveat",cursive;font-size:76px;font-weight:700;color:#111827;margin-bottom:10px;line-height:1.1}
+h1 .u{background:linear-gradient(transparent 62%,#fde68a 62%,#fde68a 92%,transparent 92%)}
+.sub{font-size:34px;color:#6b7280;margin-bottom:30px}
+.fill{flex:1;display:flex;flex-direction:column;justify-content:center}
+.row{display:flex;gap:28px;align-items:center}
+.row.top{align-items:flex-start}
+.grow{flex:1}
+.center{text-align:center}
+.box{border:4px solid #374151;border-radius:22px;padding:22px 28px;background:#fff;font-size:34px;box-shadow:6px 7px 0 rgba(0,0,0,.09)}
+.box b{display:block;font-size:40px;margin-bottom:6px}
+.box small{font-size:28px;color:#4b5563;display:block;line-height:1.4}
+.blue{border-color:#2563eb;background:#eff6ff}.orange{border-color:#ea580c;background:#fff7ed}
+.green{border-color:#16a34a;background:#f0fdf4}.purple{border-color:#9333ea;background:#faf5ff}
+.red{border-color:#dc2626;background:#fef2f2}.gray{border-color:#64748b;background:#f8fafc}
+.yellow{border-color:#ca8a04;background:#fefce8}.teal{border-color:#0d9488;background:#f0fdfa}
+.arrow{font-family:"Ink Free","Caveat",cursive;font-size:30px;color:#374151;text-align:center;line-height:1.1;min-width:120px}
+.arrow:before{content:"⟶";display:block;font-size:64px;line-height:.8;font-family:"Segoe UI Symbol"}
+.arrow.down:before{content:"↓"}
+.arrow code{font-size:26px}
+ul.pts{list-style:none;font-size:40px;line-height:1.35}
+ul.pts li{margin:16px 0;padding-left:56px;position:relative}
+ul.pts li:before{content:"✦";position:absolute;left:0;color:#ea580c}
+ul.pts li.x:before{content:"✗";color:#dc2626;font-weight:700}
+ul.pts li.ok:before{content:"✓";color:#16a34a;font-weight:700}
+code,pre{font-family:"Cascadia Code",Consolas,monospace;font-variant-ligatures:none}
+code{background:#f1f5f9;border-radius:8px;padding:2px 10px;font-size:.92em}
+pre.code{background:#1e293b;color:#e2e8f0;border-radius:22px;padding:28px 36px;font-size:36px;line-height:1.5;box-shadow:8px 9px 0 rgba(0,0,0,.12)}
+pre .k{color:#c4b5fd}pre .s{color:#86efac}pre .c{color:#94a3b8}pre .n{color:#fdba74}pre .t{color:#7dd3fc}pre .a{color:#fca5a5}
+.term{background:#0f172a;color:#e2e8f0;border-radius:18px;padding:22px 30px;font-family:"Cascadia Code",Consolas,monospace;font-size:32px;line-height:1.5}
+table.t{border-collapse:separate;border-spacing:0;font-size:33px;width:100%;background:#fff;border:4px solid #374151;border-radius:20px;overflow:hidden}
+table.t th{background:#1f2937;color:#fff;text-align:left;padding:14px 24px;font-size:31px}
+table.t td{padding:12px 24px;border-top:2px solid #e5e7eb}
+.note{font-family:"Ink Free","Caveat",cursive;font-size:42px;color:#b45309;transform:rotate(-1.5deg)}
+.pill{display:inline-block;border-radius:999px;padding:6px 22px;font-size:30px;font-weight:600;background:#e5e7eb}
+.big{font-size:96px;font-weight:800;font-family:"Cascadia Code",Consolas,monospace}
+.footer{position:absolute;left:110px;right:110px;bottom:38px;display:flex;align-items:center;gap:24px;font-size:24px;color:#9ca3af}
+.bar{flex:1;height:8px;background:#e5e7eb;border-radius:9px;overflow:hidden}
+.bar i{display:block;height:100%;background:#f59e0b;width:{{PROGRESS}}}
+[data-step].hide{visibility:hidden}
+.new{outline:5px dashed #f59e0b;outline-offset:10px;border-radius:14px}
+.nohl.new,.term .new,pre .new,li.new,tr.new,svg .new{outline:none}
+li.new,tr.new td{background:#fef3c7}
+pre .new{background:rgba(251,191,36,.22);border-radius:6px}
+.hl *{color:#111827 !important}
+.hl{background:#fde047 !important;color:#111827 !important;border-radius:8px;box-shadow:0 0 0 4px #fde047}
+</style></head>
+<body>
+<div class="slide">{{BODY}}</div>
+<div class="footer"><span>{{TAG}}</span><div class="bar"><i></i></div><span>{{TRACK}}</span></div>
+<script>
+const STEP={{STEP}};
+document.querySelectorAll("[data-step]").forEach(e=>{const s=+e.dataset.step;
+  if(s>STEP)e.classList.add("hide"); else if(s===STEP&&s>0)e.classList.add("new");});
+document.querySelectorAll("[data-hl]").forEach(e=>{if(e.dataset.hl.split(",").map(Number).includes(STEP))e.classList.add("hl");});
+</script>
+</body></html>

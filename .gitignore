@@ -1,0 +1,6 @@
+models/
+work/
+out/
+edge-profile*/
+*.wav
+__pycache__/

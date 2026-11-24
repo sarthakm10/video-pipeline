@@ -1,0 +1,107 @@
+name: Render videos
+
+on:
+  workflow_dispatch:
+    inputs:
+      specs:
+        description: "Spec names, comma-separated (e.g. c_gra,c_mta,c_spc)"
+        required: true
+      upload:
+        description: "Also upload to the java_60_days 'videos' release (needs the RELEASE_TOKEN secret)"
+        type: boolean
+        default: false
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      specs: ${{ steps.m.outputs.specs }}
+    steps:
+      - id: m
+        env:
+          SPECS: ${{ inputs.specs }}
+        run: echo "specs=$(echo "$SPECS" | jq -Rc 'split(",") | map(gsub("^\s+|\s+$"; "")) | map(select(length > 0))')" >> "$GITHUB_OUTPUT"
+
+  render:
+    needs: plan
+    runs-on: windows-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        spec: ${{ fromJson(needs.plan.outputs.specs) }}
+    env:
+      FFMPEG_DIR: C:/ProgramData/chocolatey/bin
+      BROWSER: C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe
+      VCODEC: libx264
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Install ffmpeg
+        run: choco install ffmpeg -y --no-progress
+
+      - name: Cache Kokoro models
+        id: models
+        uses: actions/cache@v4
+        with:
+          path: models
+          key: kokoro-v1.0
+
+      - name: Download Kokoro models
+        if: steps.models.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force models | Out-Null
+          $base = "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0"
+          Invoke-WebRequest "$base/kokoro-v1.0.onnx" -OutFile models/kokoro-v1.0.onnx
+          Invoke-WebRequest "$base/voices-v1.0.bin" -OutFile models/voices-v1.0.bin
+
+      - name: Install fonts the slides use (Cascadia Code, Caveat as the Ink Free fallback)
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          $dir = "$env:LOCALAPPDATA\Microsoft\Windows\Fonts"
+          New-Item -ItemType Directory -Force $dir | Out-Null
+          $reg = "HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Fonts"
+          function Add-Font($name, $file) {
+            $dest = Join-Path $dir (Split-Path $file -Leaf)
+            Copy-Item $file $dest -Force
+            New-ItemProperty -Path $reg -Name "$name (TrueType)" -Value $dest -Force | Out-Null
+          }
+          Invoke-WebRequest "https://github.com/microsoft/cascadia-code/releases/download/v2407.24/CascadiaCode-2407.24.zip" -OutFile cc.zip
+          Expand-Archive cc.zip cc -Force
+          Add-Font "Cascadia Code" (Get-ChildItem cc -Recurse -Filter CascadiaCode.ttf | Select-Object -First 1).FullName
+          Invoke-WebRequest "https://github.com/google/fonts/raw/main/ofl/caveat/Caveat%5Bwght%5D.ttf" -OutFile Caveat.ttf
+          Add-Font "Caveat" (Resolve-Path Caveat.ttf).Path
+          Get-ChildItem C:\Windows\Fonts -Filter Ink* | Select-Object Name
+
+      - name: Render
+        run: python build.py ${{ matrix.spec }}
+
+      - name: Find output file
+        id: out
+        shell: pwsh
+        run: |
+          $f = (Get-ChildItem out -Filter *.mp4 | Select-Object -First 1).Name
+          "file=$f" >> $env:GITHUB_OUTPUT
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.spec }}
+          path: out/*.mp4
+          retention-days: 7
+
+      - name: Upload to java_60_days release
+        if: inputs.upload
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          FILE: ${{ steps.out.outputs.file }}
+        run: gh release upload videos "out/$env:FILE" --repo sarthakm10/java_60_days --clobber
