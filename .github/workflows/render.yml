@@ -122,6 +122,8 @@ jobs:
           node-version: 22
 
       - name: Regenerate videos.js
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: node scripts/build-videos.js
 
       - name: Commit and push if it changed
