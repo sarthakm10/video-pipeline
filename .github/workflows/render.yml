@@ -45,7 +45,17 @@ jobs:
       - run: pip install -r requirements.txt
 
       - name: Install ffmpeg
-        run: choco install ffmpeg -y --no-progress
+        # Chocolatey's feed sometimes times out (504) and choco still exits 0, so retry and check ffprobe is there
+        shell: pwsh
+        run: |
+          for ($i = 1; $i -le 4; $i++) {
+            choco install ffmpeg -y --no-progress
+            if (Test-Path "$env:FFMPEG_DIR/ffprobe.exe") { exit 0 }
+            Write-Host "ffmpeg not installed (attempt $i), retrying in 20 s"
+            Start-Sleep -Seconds 20
+          }
+          Write-Error "ffmpeg could not be installed from Chocolatey"
+          exit 1
 
       - name: Cache Kokoro models
         id: models
